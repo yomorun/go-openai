@@ -56,6 +56,7 @@ const (
 	// Google Vertex AI (OpenAI-compatible) Gemini 3 preview model.
 	// Vertex OpenAI endpoint expects publisher/model format.
 	Gemini3FlashPreview   = "google/gemini-3-flash-preview"
+	Gemini3ProPreview     = "google/gemini-3-pro-preview"
 	GPT3Dot5Turbo0125     = "gpt-3.5-turbo-0125"
 	GPT3Dot5Turbo1106     = "gpt-3.5-turbo-1106"
 	GPT3Dot5Turbo0613     = "gpt-3.5-turbo-0613"
@@ -105,6 +106,7 @@ const (
 var disabledModelsForEndpoints = map[string]map[string]bool{
 	"/completions": {
 		Gemini3FlashPreview:     true,
+		Gemini3ProPreview:       true,
 		O1Mini:                  true,
 		O1Mini20240912:          true,
 		O1Preview:               true,

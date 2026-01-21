@@ -23,6 +23,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	//fmt.Printf("Access token (expires %s): %s\n\n", tok.Expiry.Format(time.RFC3339), tok.AccessToken)
 
 	project := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	location := os.Getenv("GOOGLE_CLOUD_LOCATION")
@@ -44,7 +45,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	req := openai.ChatCompletionRequest{
-		Model: openai.Gemini3FlashPreview,
+		Model: openai.Gemini3ProPreview,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role: openai.ChatMessageRoleUser,
