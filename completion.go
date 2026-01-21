@@ -53,14 +53,17 @@ const (
 	GPT5Mini                = "gpt-5-mini"
 	GPT5Nano                = "gpt-5-nano"
 	GPT5ChatLatest          = "gpt-5-chat-latest"
-	GPT3Dot5Turbo0125       = "gpt-3.5-turbo-0125"
-	GPT3Dot5Turbo1106       = "gpt-3.5-turbo-1106"
-	GPT3Dot5Turbo0613       = "gpt-3.5-turbo-0613"
-	GPT3Dot5Turbo0301       = "gpt-3.5-turbo-0301"
-	GPT3Dot5Turbo16K        = "gpt-3.5-turbo-16k"
-	GPT3Dot5Turbo16K0613    = "gpt-3.5-turbo-16k-0613"
-	GPT3Dot5Turbo           = "gpt-3.5-turbo"
-	GPT3Dot5TurboInstruct   = "gpt-3.5-turbo-instruct"
+	// Google Vertex AI (OpenAI-compatible) Gemini 3 preview model.
+	// Vertex OpenAI endpoint expects publisher/model format.
+	Gemini3FlashPreview   = "google/gemini-3-flash-preview"
+	GPT3Dot5Turbo0125     = "gpt-3.5-turbo-0125"
+	GPT3Dot5Turbo1106     = "gpt-3.5-turbo-1106"
+	GPT3Dot5Turbo0613     = "gpt-3.5-turbo-0613"
+	GPT3Dot5Turbo0301     = "gpt-3.5-turbo-0301"
+	GPT3Dot5Turbo16K      = "gpt-3.5-turbo-16k"
+	GPT3Dot5Turbo16K0613  = "gpt-3.5-turbo-16k-0613"
+	GPT3Dot5Turbo         = "gpt-3.5-turbo"
+	GPT3Dot5TurboInstruct = "gpt-3.5-turbo-instruct"
 	// Deprecated: Model is shutdown. Use gpt-3.5-turbo-instruct instead.
 	GPT3TextDavinci003 = "text-davinci-003"
 	// Deprecated: Model is shutdown. Use gpt-3.5-turbo-instruct instead.
@@ -101,6 +104,7 @@ const (
 
 var disabledModelsForEndpoints = map[string]map[string]bool{
 	"/completions": {
+		Gemini3FlashPreview:     true,
 		O1Mini:                  true,
 		O1Mini20240912:          true,
 		O1Preview:               true,

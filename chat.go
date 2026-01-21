@@ -19,6 +19,13 @@ const (
 	ChatMessageRoleDeveloper = "developer"
 )
 
+const (
+	ReasoningEffortHigh    = "high"
+	ReasoningEffortMedium  = "medium"
+	ReasoningEffortLow     = "low"
+	ReasoningEffortMinimal = "minimal"
+)
+
 const chatCompletionsSuffix = "/chat/completions"
 
 var (
@@ -92,6 +99,13 @@ type ChatMessagePart struct {
 	Type     ChatMessagePartType  `json:"type,omitempty"`
 	Text     string               `json:"text,omitempty"`
 	ImageURL *ChatMessageImageURL `json:"image_url,omitempty"`
+	// ExtraPart is a vendor-specific extension container. For example, Vertex AI's
+	// OpenAI-compatible endpoint returns thought signatures inside
+	// content parts under extra_part.google.thought_signature.
+	ExtraPart map[string]any `json:"extra_part,omitempty"`
+	// ExtraContent carries vendor-specific data that would otherwise be stripped by
+	// the OpenAI-compatible schema. Vertex AI allows per-part extra_content.
+	ExtraContent map[string]any `json:"extra_content,omitempty"`
 }
 
 type ChatCompletionMessage struct {
@@ -99,6 +113,9 @@ type ChatCompletionMessage struct {
 	Content      string `json:"content,omitempty"`
 	Refusal      string `json:"refusal,omitempty"`
 	MultiContent []ChatMessagePart
+	// ExtraContent is a vendor-specific extension container. For example, Vertex AI
+	// uses extra_content to return additional metadata alongside content arrays.
+	ExtraContent map[string]any `json:"extra_content,omitempty"`
 
 	// This property isn't in the official documentation, but it's in
 	// the documentation for the official library for python:
@@ -128,7 +145,6 @@ func (m ChatCompletionMessage) MarshalJSON() ([]byte, error) {
 	if len(m.MultiContent) > 0 {
 		msg := struct {
 			Role             string            `json:"role"`
-			Content          string            `json:"-"`
 			Refusal          string            `json:"refusal,omitempty"`
 			MultiContent     []ChatMessagePart `json:"content,omitempty"`
 			Name             string            `json:"name,omitempty"`
@@ -136,7 +152,18 @@ func (m ChatCompletionMessage) MarshalJSON() ([]byte, error) {
 			FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
 			ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 			ToolCallID       string            `json:"tool_call_id,omitempty"`
-		}(m)
+			ExtraContent     map[string]any    `json:"extra_content,omitempty"`
+		}{
+			Role:             m.Role,
+			Refusal:          m.Refusal,
+			MultiContent:     m.MultiContent,
+			Name:             m.Name,
+			ReasoningContent: m.ReasoningContent,
+			FunctionCall:     m.FunctionCall,
+			ToolCalls:        m.ToolCalls,
+			ToolCallID:       m.ToolCallID,
+			ExtraContent:     m.ExtraContent,
+		}
 		return json.Marshal(msg)
 	}
 
@@ -150,7 +177,18 @@ func (m ChatCompletionMessage) MarshalJSON() ([]byte, error) {
 		FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
 		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 		ToolCallID       string            `json:"tool_call_id,omitempty"`
-	}(m)
+		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
+	}{
+		Role:             m.Role,
+		Content:          m.Content,
+		Refusal:          m.Refusal,
+		Name:             m.Name,
+		ReasoningContent: m.ReasoningContent,
+		FunctionCall:     m.FunctionCall,
+		ToolCalls:        m.ToolCalls,
+		ToolCallID:       m.ToolCallID,
+		ExtraContent:     m.ExtraContent,
+	}
 	return json.Marshal(msg)
 }
 
@@ -160,15 +198,25 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		Content          string `json:"content"`
 		Refusal          string `json:"refusal,omitempty"`
 		MultiContent     []ChatMessagePart
-		Name             string        `json:"name,omitempty"`
-		ReasoningContent string        `json:"reasoning_content,omitempty"`
-		FunctionCall     *FunctionCall `json:"function_call,omitempty"`
-		ToolCalls        []ToolCall    `json:"tool_calls,omitempty"`
-		ToolCallID       string        `json:"tool_call_id,omitempty"`
+		Name             string         `json:"name,omitempty"`
+		ReasoningContent string         `json:"reasoning_content,omitempty"`
+		FunctionCall     *FunctionCall  `json:"function_call,omitempty"`
+		ToolCalls        []ToolCall     `json:"tool_calls,omitempty"`
+		ToolCallID       string         `json:"tool_call_id,omitempty"`
+		ExtraContent     map[string]any `json:"extra_content,omitempty"`
 	}{}
 
 	if err := json.Unmarshal(bs, &msg); err == nil {
-		*m = ChatCompletionMessage(msg)
+		m.Role = msg.Role
+		m.Content = msg.Content
+		m.Refusal = msg.Refusal
+		m.MultiContent = msg.MultiContent
+		m.Name = msg.Name
+		m.ReasoningContent = msg.ReasoningContent
+		m.FunctionCall = msg.FunctionCall
+		m.ToolCalls = msg.ToolCalls
+		m.ToolCallID = msg.ToolCallID
+		m.ExtraContent = msg.ExtraContent
 		return nil
 	}
 	multiMsg := struct {
@@ -181,11 +229,21 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
 		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 		ToolCallID       string            `json:"tool_call_id,omitempty"`
+		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 	}{}
 	if err := json.Unmarshal(bs, &multiMsg); err != nil {
 		return err
 	}
-	*m = ChatCompletionMessage(multiMsg)
+	m.Role = multiMsg.Role
+	m.Content = multiMsg.Content
+	m.Refusal = multiMsg.Refusal
+	m.MultiContent = multiMsg.MultiContent
+	m.Name = multiMsg.Name
+	m.ReasoningContent = multiMsg.ReasoningContent
+	m.FunctionCall = multiMsg.FunctionCall
+	m.ToolCalls = multiMsg.ToolCalls
+	m.ToolCallID = multiMsg.ToolCallID
+	m.ExtraContent = multiMsg.ExtraContent
 	return nil
 }
 
@@ -195,6 +253,9 @@ type ToolCall struct {
 	ID       string       `json:"id,omitempty"`
 	Type     ToolType     `json:"type"`
 	Function FunctionCall `json:"function"`
+	// ExtraContent preserves provider-specific metadata (e.g. thought signatures)
+	// attached to tool calls, as used by Vertex AI.
+	ExtraContent map[string]any `json:"extra_content,omitempty"`
 }
 
 type FunctionCall struct {
@@ -307,7 +368,7 @@ type ChatCompletionRequest struct {
 	// Store can be set to true to store the output of this completion request for use in distillations and evals.
 	// https://platform.openai.com/docs/api-reference/chat/create#chat-create-store
 	Store bool `json:"store,omitempty"`
-	// Controls effort on reasoning for reasoning models. It can be set to "low", "medium", or "high".
+	// Controls effort on reasoning for reasoning models. It can be set to "low", "medium", "high" or "minimal".
 	ReasoningEffort string `json:"reasoning_effort,omitempty"`
 	// Metadata to store with the completion.
 	Metadata map[string]string `json:"metadata,omitempty"`
@@ -333,6 +394,9 @@ type ChatCompletionRequest struct {
 	SafetyIdentifier string `json:"safety_identifier,omitempty"`
 	// Embedded struct for non-OpenAI extensions
 	ChatCompletionRequestExtensions
+	// ExtraBody lets provider-specific fields pass through. Vertex AI uses
+	// extra_body.google.* for features like thinking_config and safety_settings.
+	ExtraBody map[string]any `json:"extra_body,omitempty"`
 }
 
 type StreamOptions struct {

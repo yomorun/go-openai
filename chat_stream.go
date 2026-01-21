@@ -2,21 +2,98 @@ package openai
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 )
 
 type ChatCompletionStreamChoiceDelta struct {
-	Content      string        `json:"content,omitempty"`
-	Role         string        `json:"role,omitempty"`
-	FunctionCall *FunctionCall `json:"function_call,omitempty"`
-	ToolCalls    []ToolCall    `json:"tool_calls,omitempty"`
-	Refusal      string        `json:"refusal,omitempty"`
+	Content      string            `json:"content,omitempty"`
+	MultiContent []ChatMessagePart `json:"-"`
+	Role         string            `json:"role,omitempty"`
+	FunctionCall *FunctionCall     `json:"function_call,omitempty"`
+	ToolCalls    []ToolCall        `json:"tool_calls,omitempty"`
+	Refusal      string            `json:"refusal,omitempty"`
 
 	// This property is used for the "reasoning" feature supported by deepseek-reasoner
 	// which is not in the official documentation.
 	// the doc from deepseek:
 	// - https://api-docs.deepseek.com/api/create-chat-completion#responses
 	ReasoningContent string `json:"reasoning_content,omitempty"`
+}
+
+func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
+	// Probe the content type using json.RawMessage to support both string and array payloads.
+	type probe struct {
+		Content          json.RawMessage `json:"content,omitempty"`
+		Role             string          `json:"role,omitempty"`
+		FunctionCall     *FunctionCall   `json:"function_call,omitempty"`
+		ToolCalls        []ToolCall      `json:"tool_calls,omitempty"`
+		Refusal          string          `json:"refusal,omitempty"`
+		ReasoningContent string          `json:"reasoning_content,omitempty"`
+	}
+
+	var p probe
+	if err := json.Unmarshal(bs, &p); err != nil {
+		return err
+	}
+
+	// No content — simply copy scalar fields.
+	if len(p.Content) == 0 {
+		*d = ChatCompletionStreamChoiceDelta{
+			Role:             p.Role,
+			FunctionCall:     p.FunctionCall,
+			ToolCalls:        p.ToolCalls,
+			Refusal:          p.Refusal,
+			ReasoningContent: p.ReasoningContent,
+		}
+		return nil
+	}
+
+	// content is a JSON string.
+	if len(p.Content) > 0 && p.Content[0] == '"' {
+		var r struct {
+			Content          string        `json:"content,omitempty"`
+			Role             string        `json:"role,omitempty"`
+			FunctionCall     *FunctionCall `json:"function_call,omitempty"`
+			ToolCalls        []ToolCall    `json:"tool_calls,omitempty"`
+			Refusal          string        `json:"refusal,omitempty"`
+			ReasoningContent string        `json:"reasoning_content,omitempty"`
+		}
+		if err := json.Unmarshal(bs, &r); err != nil {
+			return err
+		}
+		*d = ChatCompletionStreamChoiceDelta{
+			Content:          r.Content,
+			Role:             r.Role,
+			FunctionCall:     r.FunctionCall,
+			ToolCalls:        r.ToolCalls,
+			Refusal:          r.Refusal,
+			ReasoningContent: r.ReasoningContent,
+		}
+		return nil
+	}
+
+	// Otherwise treat content as an array of parts.
+	var a struct {
+		MultiContent     []ChatMessagePart `json:"content,omitempty"`
+		Role             string            `json:"role,omitempty"`
+		FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
+		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
+		Refusal          string            `json:"refusal,omitempty"`
+		ReasoningContent string            `json:"reasoning_content,omitempty"`
+	}
+	if err := json.Unmarshal(bs, &a); err != nil {
+		return err
+	}
+	*d = ChatCompletionStreamChoiceDelta{
+		MultiContent:     a.MultiContent,
+		Role:             a.Role,
+		FunctionCall:     a.FunctionCall,
+		ToolCalls:        a.ToolCalls,
+		Refusal:          a.Refusal,
+		ReasoningContent: a.ReasoningContent,
+	}
+	return nil
 }
 
 type ChatCompletionStreamChoiceLogprobs struct {

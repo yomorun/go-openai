@@ -1205,3 +1205,72 @@ func TestChatCompletionRequest_UnmarshalJSON(t *testing.T) {
 		})
 	}
 }
+
+func TestChatCompletionMessageExtraFields(t *testing.T) {
+	raw := []byte(`{
+		"role":"assistant",
+		"content":[{"type":"text","text":"Hi","extra_part":{"google":{"thought_signature":"sig"}},"extra_content":{"google":{"foo":"bar"}}}],
+		"extra_content":{"google":{"safety_rationale":"ok"}},
+		"tool_calls":[{"id":"call_1","type":"function","function":{"name":"f","arguments":"{}"},"extra_content":{"google":{"thought_signature":"sig2"}}}]
+	}`)
+
+	var msg openai.ChatCompletionMessage
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+
+	if len(msg.MultiContent) != 1 {
+		t.Fatalf("expected 1 content part, got %d", len(msg.MultiContent))
+	}
+	if msg.MultiContent[0].ExtraPart == nil || msg.MultiContent[0].ExtraPart["google"] == nil {
+		t.Fatalf("expected extra_part to round-trip")
+	}
+	if msg.ExtraContent == nil || msg.ExtraContent["google"] == nil {
+		t.Fatalf("expected message extra_content to round-trip")
+	}
+	if len(msg.ToolCalls) != 1 || msg.ToolCalls[0].ExtraContent == nil {
+		t.Fatalf("expected tool call extra_content to round-trip")
+	}
+
+	out, err := json.Marshal(msg)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	if !strings.Contains(string(out), "extra_part") || !strings.Contains(string(out), "extra_content") {
+		t.Fatalf("marshal did not preserve extra fields: %s", string(out))
+	}
+}
+
+func TestChatCompletionRequestExtraBodyMarshal(t *testing.T) {
+	req := openai.ChatCompletionRequest{
+		Model: openai.Gemini3FlashPreview,
+		Messages: []openai.ChatCompletionMessage{{
+			Role:    openai.ChatMessageRoleUser,
+			Content: "hello",
+		}},
+		ExtraBody: map[string]any{
+			"google": map[string]any{
+				"include_thoughts": true,
+			},
+		},
+	}
+
+	out, err := json.Marshal(req)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	if !strings.Contains(string(out), `"extra_body"`) {
+		t.Fatalf("expected extra_body in marshaled JSON, got: %s", string(out))
+	}
+}
+
+func TestChatCompletionStreamChoiceDeltaMultiContent(t *testing.T) {
+	raw := []byte(`{"content":[{"type":"text","text":"Hello","extra_part":{"google":{"thought_signature":"sig"}}}]}`)
+	var d openai.ChatCompletionStreamChoiceDelta
+	if err := json.Unmarshal(raw, &d); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if len(d.MultiContent) != 1 || d.MultiContent[0].ExtraPart == nil {
+		t.Fatalf("expected multi content with extra_part, got %#v", d)
+	}
+}
