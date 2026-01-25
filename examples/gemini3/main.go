@@ -23,7 +23,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	//fmt.Printf("Access token (expires %s): %s\n\n", tok.Expiry.Format(time.RFC3339), tok.AccessToken)
+	fmt.Printf("Access token (expires %s): %s\n\n", tok.Expiry.Format(time.RFC3339), tok.AccessToken)
 
 	project := os.Getenv("GOOGLE_CLOUD_PROJECT")
 	location := os.Getenv("GOOGLE_CLOUD_LOCATION")
@@ -43,6 +43,8 @@ func main() {
 
 	// Seed randomness for mock weather.
 	rand.Seed(time.Now().UnixNano())
+
+	round := 1
 
 	req := openai.ChatCompletionRequest{
 		Model: openai.Gemini3ProPreview,
@@ -98,10 +100,14 @@ func main() {
 		},
 	}
 
+	printJSON(round, "request", req)
+
 	resp, err := client.CreateChatCompletion(ctx, req)
 	if err != nil {
 		panic(err)
 	}
+
+	printJSON(round, "response", resp)
 
 	assistantMsg := resp.Choices[0].Message
 	fmt.Println("Reply:", assistantMsg.Content)
@@ -178,13 +184,29 @@ func main() {
 	}
 
 	// Second call to let the model use the tool outputs.
+	round++
+	printJSON(round, "request", req)
+
 	resp2, err := client.CreateChatCompletion(ctx, req)
 	if err != nil {
 		panic(err)
 	}
+
+	printJSON(round, "response", resp2)
+
 	finalMsg := resp2.Choices[0].Message
 	fmt.Println("Final answer:", finalMsg.Content)
 	if len(finalMsg.MultiContent) > 0 {
 		fmt.Printf("Final thought signature: %+v\n", finalMsg.MultiContent[0].ExtraPart)
 	}
+}
+
+func printJSON(round int, kind string, v any) {
+	b, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		fmt.Printf("marshal error: %v\n", err)
+		return
+	}
+	// Green background for visibility.
+	fmt.Printf("\x1b[42m[Round %d %s]\x1b[0m\n%s\n\n", round, kind, string(b))
 }

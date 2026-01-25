@@ -1273,4 +1273,27 @@ func TestChatCompletionStreamChoiceDeltaMultiContent(t *testing.T) {
 	if len(d.MultiContent) != 1 || d.MultiContent[0].ExtraPart == nil {
 		t.Fatalf("expected multi content with extra_part, got %#v", d)
 	}
+	if d.Content != "Hello" {
+		t.Fatalf("expected flattened content, got %q", d.Content)
+	}
+}
+
+func TestChatCompletionMessageFlattenContent(t *testing.T) {
+	raw := []byte(`{
+		"role":"assistant",
+		"content":[
+			{"type":"text","text":"Hello "},
+			{"type":"text","text":"World"}
+		]
+	}`)
+	var msg openai.ChatCompletionMessage
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if msg.Content != "Hello World" {
+		t.Fatalf("expected flattened content, got %q", msg.Content)
+	}
+	if len(msg.MultiContent) != 2 {
+		t.Fatalf("expected 2 parts")
+	}
 }

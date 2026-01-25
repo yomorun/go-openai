@@ -86,6 +86,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 		return err
 	}
 	*d = ChatCompletionStreamChoiceDelta{
+		Content:          concatTextParts(a.MultiContent),
 		MultiContent:     a.MultiContent,
 		Role:             a.Role,
 		FunctionCall:     a.FunctionCall,

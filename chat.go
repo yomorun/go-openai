@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/sashabaranov/go-openai/jsonschema"
 )
@@ -139,10 +140,10 @@ type ChatCompletionMessage struct {
 }
 
 func (m ChatCompletionMessage) MarshalJSON() ([]byte, error) {
-	if m.Content != "" && m.MultiContent != nil {
-		return nil, ErrContentFieldsMisused
-	}
 	if len(m.MultiContent) > 0 {
+		if m.Content != "" && m.Content != concatTextParts(m.MultiContent) {
+			return nil, ErrContentFieldsMisused
+		}
 		msg := struct {
 			Role             string            `json:"role"`
 			Refusal          string            `json:"refusal,omitempty"`
@@ -211,6 +212,9 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		m.Content = msg.Content
 		m.Refusal = msg.Refusal
 		m.MultiContent = msg.MultiContent
+		if m.Content == "" && len(m.MultiContent) > 0 && m.Role != ChatMessageRoleUser {
+			m.Content = concatTextParts(m.MultiContent)
+		}
 		m.Name = msg.Name
 		m.ReasoningContent = msg.ReasoningContent
 		m.FunctionCall = msg.FunctionCall
@@ -238,6 +242,9 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 	m.Content = multiMsg.Content
 	m.Refusal = multiMsg.Refusal
 	m.MultiContent = multiMsg.MultiContent
+	if m.Content == "" && len(m.MultiContent) > 0 && m.Role != ChatMessageRoleUser {
+		m.Content = concatTextParts(m.MultiContent)
+	}
 	m.Name = multiMsg.Name
 	m.ReasoningContent = multiMsg.ReasoningContent
 	m.FunctionCall = multiMsg.FunctionCall
@@ -245,6 +252,17 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 	m.ToolCallID = multiMsg.ToolCallID
 	m.ExtraContent = multiMsg.ExtraContent
 	return nil
+}
+
+// concatTextParts merges text parts to provide backward-compatible plain Content.
+func concatTextParts(parts []ChatMessagePart) string {
+	var b strings.Builder
+	for _, p := range parts {
+		if p.Type == ChatMessagePartTypeText {
+			b.WriteString(p.Text)
+		}
+	}
+	return b.String()
 }
 
 type ToolCall struct {
