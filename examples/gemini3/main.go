@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 	"golang.org/x/oauth2/google"
 )
 

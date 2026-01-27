@@ -1,7 +1,7 @@
 # Go OpenAI
-[![Go Reference](https://pkg.go.dev/badge/github.com/sashabaranov/go-openai.svg)](https://pkg.go.dev/github.com/sashabaranov/go-openai)
-[![Go Report Card](https://goreportcard.com/badge/github.com/sashabaranov/go-openai)](https://goreportcard.com/report/github.com/sashabaranov/go-openai)
-[![codecov](https://codecov.io/gh/sashabaranov/go-openai/branch/master/graph/badge.svg?token=bCbIfHLIsW)](https://codecov.io/gh/sashabaranov/go-openai)
+[![Go Reference](https://pkg.go.dev/badge/github.com/yomorun/go-openai.svg)](https://pkg.go.dev/github.com/yomorun/go-openai)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yomorun/go-openai)](https://goreportcard.com/report/github.com/yomorun/go-openai)
+[![codecov](https://codecov.io/gh/yomorun/go-openai/branch/master/graph/badge.svg?token=bCbIfHLIsW)](https://codecov.io/gh/yomorun/go-openai)
 
 This library provides unofficial Go clients for [OpenAI API](https://platform.openai.com/). We support: 
 
@@ -14,7 +14,7 @@ This library provides unofficial Go clients for [OpenAI API](https://platform.op
 ## Installation
 
 ```
-go get github.com/sashabaranov/go-openai
+go get github.com/yomorun/go-openai
 ```
 Currently, go-openai requires Go version 1.18 or greater.
 
@@ -29,7 +29,7 @@ package main
 import (
 	"context"
 	"fmt"
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -81,7 +81,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -134,7 +134,7 @@ package main
 import (
 	"context"
 	"fmt"
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -167,7 +167,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -216,7 +216,7 @@ import (
 	"context"
 	"fmt"
 
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -248,7 +248,7 @@ import (
 	"fmt"
 	"os"
 
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -289,7 +289,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 	"image/png"
 	"os"
 )
@@ -370,7 +370,7 @@ import (
 	"fmt"
 	"os"
 
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -437,7 +437,7 @@ config.HTTPClient = &http.Client{
 c := openai.NewClientWithConfig(config)
 ```
 
-See also: https://pkg.go.dev/github.com/sashabaranov/go-openai#ClientConfig
+See also: https://pkg.go.dev/github.com/yomorun/go-openai#ClientConfig
 </details>
 
 <details>
@@ -453,7 +453,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sashabaranov/go-openai"
+	"github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -507,7 +507,7 @@ import (
 	"context"
 	"fmt"
 
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -553,7 +553,7 @@ package main
 import (
 	"context"
 	"log"
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 
 )
 
@@ -610,7 +610,7 @@ import (
 	"context"
 	"fmt"
 
-	openai "github.com/sashabaranov/go-openai"
+	openai "github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -741,7 +741,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/sashabaranov/go-openai"
+	"github.com/yomorun/go-openai"
 )
 
 func main() {
@@ -816,8 +816,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sashabaranov/go-openai"
-	"github.com/sashabaranov/go-openai/jsonschema"
+	"github.com/yomorun/go-openai"
+	"github.com/yomorun/go-openai/jsonschema"
 )
 
 func main() {
@@ -889,7 +889,7 @@ Due to the factors mentioned above, different answers may be returned even for t
 By adopting these strategies, you can expect more consistent results.
 
 **Related Issues:**  
-[omitempty option of request struct will generate incorrect request when parameter is 0.](https://github.com/sashabaranov/go-openai/issues/9)
+[omitempty option of request struct will generate incorrect request when parameter is 0.](https://github.com/yomorun/go-openai/issues/9)
 
 ### Does Go OpenAI provide a method to count tokens?
 
@@ -900,15 +900,15 @@ For counting tokens, you might find the following links helpful:
 - [How to count tokens with tiktoken](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb)
 
 **Related Issues:**  
-[Is it possible to join the implementation of GPT3 Tokenizer](https://github.com/sashabaranov/go-openai/issues/62)
+[Is it possible to join the implementation of GPT3 Tokenizer](https://github.com/yomorun/go-openai/issues/62)
 
 ## Contributing
 
-By following [Contributing Guidelines](https://github.com/sashabaranov/go-openai/blob/master/CONTRIBUTING.md), we hope to ensure that your contributions are made smoothly and efficiently.
+By following [Contributing Guidelines](https://github.com/yomorun/go-openai/blob/master/CONTRIBUTING.md), we hope to ensure that your contributions are made smoothly and efficiently.
 
 ## Thank you
 
-We want to take a moment to express our deepest gratitude to the [contributors](https://github.com/sashabaranov/go-openai/graphs/contributors) and sponsors of this project:
+We want to take a moment to express our deepest gratitude to the [contributors](https://github.com/yomorun/go-openai/graphs/contributors) and sponsors of this project:
 - [Carson Kahn](https://carsonkahn.com) of [Spindle AI](https://spindleai.com)
 
 To all of you: thank you. You've helped us achieve more than we ever imagined possible. Can't wait to see where we go next, together!
