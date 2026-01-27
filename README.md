@@ -9,6 +9,7 @@ This library provides unofficial Go clients for [OpenAI API](https://platform.op
 * GPT-3, GPT-4
 * DALL·E 2, DALL·E 3, GPT Image 1
 * Whisper
+* Gemini 3 Pro, Gemini 3 Flash
 
 ## Installation
 
