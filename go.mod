@@ -1,8 +1,7 @@
-module github.com/sashabaranov/go-openai
+module github.com/yomorun/go-openai
 
-go 1.24.0
+go 1.25.0
 
-require (
-	cloud.google.com/go/compute/metadata v0.3.0 // indirect
-	golang.org/x/oauth2 v0.34.0 // indirect
-)
+require golang.org/x/oauth2 v0.34.0
+
+require cloud.google.com/go/compute/metadata v0.3.0 // indirect
