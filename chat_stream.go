@@ -13,6 +13,7 @@ type ChatCompletionStreamChoiceDelta struct {
 	FunctionCall *FunctionCall     `json:"function_call,omitempty"`
 	ToolCalls    []ToolCall        `json:"tool_calls,omitempty"`
 	Refusal      string            `json:"refusal,omitempty"`
+	Audio        *ChatMessageAudio `json:"audio,omitempty"`
 
 	// This property is used for the "reasoning" feature supported by deepseek-reasoner
 	// which is not in the official documentation.
@@ -24,12 +25,13 @@ type ChatCompletionStreamChoiceDelta struct {
 func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 	// Probe the content type using json.RawMessage to support both string and array payloads.
 	type probe struct {
-		Content          json.RawMessage `json:"content,omitempty"`
-		Role             string          `json:"role,omitempty"`
-		FunctionCall     *FunctionCall   `json:"function_call,omitempty"`
-		ToolCalls        []ToolCall      `json:"tool_calls,omitempty"`
-		Refusal          string          `json:"refusal,omitempty"`
-		ReasoningContent string          `json:"reasoning_content,omitempty"`
+		Content          json.RawMessage   `json:"content,omitempty"`
+		Role             string            `json:"role,omitempty"`
+		FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
+		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
+		Refusal          string            `json:"refusal,omitempty"`
+		ReasoningContent string            `json:"reasoning_content,omitempty"`
+		Audio            *ChatMessageAudio `json:"audio,omitempty"`
 	}
 
 	var p probe
@@ -45,6 +47,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 			ToolCalls:        p.ToolCalls,
 			Refusal:          p.Refusal,
 			ReasoningContent: p.ReasoningContent,
+			Audio:            p.Audio,
 		}
 		return nil
 	}
@@ -52,12 +55,13 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 	// content is a JSON string.
 	if len(p.Content) > 0 && p.Content[0] == '"' {
 		var r struct {
-			Content          string        `json:"content,omitempty"`
-			Role             string        `json:"role,omitempty"`
-			FunctionCall     *FunctionCall `json:"function_call,omitempty"`
-			ToolCalls        []ToolCall    `json:"tool_calls,omitempty"`
-			Refusal          string        `json:"refusal,omitempty"`
-			ReasoningContent string        `json:"reasoning_content,omitempty"`
+			Content          string            `json:"content,omitempty"`
+			Role             string            `json:"role,omitempty"`
+			FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
+			ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
+			Refusal          string            `json:"refusal,omitempty"`
+			ReasoningContent string            `json:"reasoning_content,omitempty"`
+			Audio            *ChatMessageAudio `json:"audio,omitempty"`
 		}
 		if err := json.Unmarshal(bs, &r); err != nil {
 			return err
@@ -69,6 +73,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 			ToolCalls:        r.ToolCalls,
 			Refusal:          r.Refusal,
 			ReasoningContent: r.ReasoningContent,
+			Audio:            r.Audio,
 		}
 		return nil
 	}
@@ -81,6 +86,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 		Refusal          string            `json:"refusal,omitempty"`
 		ReasoningContent string            `json:"reasoning_content,omitempty"`
+		Audio            *ChatMessageAudio `json:"audio,omitempty"`
 	}
 	if err := json.Unmarshal(bs, &a); err != nil {
 		return err
@@ -93,6 +99,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 		ToolCalls:        a.ToolCalls,
 		Refusal:          a.Refusal,
 		ReasoningContent: a.ReasoningContent,
+		Audio:            a.Audio,
 	}
 	return nil
 }

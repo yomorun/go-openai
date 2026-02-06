@@ -1,6 +1,7 @@
 package openai_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -1278,6 +1279,17 @@ func TestChatCompletionStreamChoiceDeltaMultiContent(t *testing.T) {
 	}
 }
 
+func TestChatCompletionStreamChoiceDeltaAudio(t *testing.T) {
+	raw := []byte(`{"audio":{"id":"aud_delta","data":"AQID","format":"wav"}}`)
+	var d openai.ChatCompletionStreamChoiceDelta
+	if err := json.Unmarshal(raw, &d); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if d.Audio == nil || d.Audio.ID != "aud_delta" {
+		t.Fatalf("expected audio payload, got %#v", d.Audio)
+	}
+}
+
 func TestChatCompletionMessageFlattenContent(t *testing.T) {
 	raw := []byte(`{
 		"role":"assistant",
@@ -1295,5 +1307,231 @@ func TestChatCompletionMessageFlattenContent(t *testing.T) {
 	}
 	if len(msg.MultiContent) != 2 {
 		t.Fatalf("expected 2 parts")
+	}
+}
+
+func TestChatCompletionMessageInputAudioSerialization(t *testing.T) {
+	msg := openai.ChatCompletionMessage{
+		Role: openai.ChatMessageRoleUser,
+		MultiContent: []openai.ChatMessagePart{
+			{
+				Type: openai.ChatMessagePartTypeInputAudio,
+				InputAudio: &openai.ChatMessageInputAudio{
+					Data:   "ZmFrZQ==",
+					Format: "wav",
+				},
+			},
+		},
+	}
+
+	data, err := json.Marshal(msg)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("unmarshal round trip failed: %v", err)
+	}
+	content, ok := decoded["content"].([]any)
+	if !ok || len(content) != 1 {
+		t.Fatalf("expected one content part, got %#v", decoded["content"])
+	}
+	part, ok := content[0].(map[string]any)
+	if !ok {
+		t.Fatalf("content part not object: %#v", content[0])
+	}
+	if part["type"] != string(openai.ChatMessagePartTypeInputAudio) {
+		t.Fatalf("unexpected part type: %v", part["type"])
+	}
+	inAudio, ok := part["input_audio"].(map[string]any)
+	if !ok {
+		t.Fatalf("missing input_audio payload: %#v", part)
+	}
+	if inAudio["data"] != "ZmFrZQ==" || inAudio["format"] != "wav" {
+		t.Fatalf("unexpected input_audio payload: %#v", inAudio)
+	}
+}
+
+func TestChatCompletionMessageAudioField(t *testing.T) {
+	raw := []byte(`{
+		"role":"assistant",
+		"content":"Sure!",
+		"audio":{"id":"aud_123","data":"AQID","format":"wav","transcript":"hello"}
+	}`)
+	var msg openai.ChatCompletionMessage
+	if err := json.Unmarshal(raw, &msg); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if msg.Audio == nil || msg.Audio.ID != "aud_123" || msg.Audio.Format != "wav" {
+		t.Fatalf("audio field not parsed: %#v", msg.Audio)
+	}
+	if msg.Audio.Transcript != "hello" {
+		t.Fatalf("unexpected transcript: %q", msg.Audio.Transcript)
+	}
+	serialized, err := json.Marshal(msg)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	if !strings.Contains(string(serialized), "\"audio\"") {
+		t.Fatalf("expected audio field in marshaled JSON: %s", string(serialized))
+	}
+}
+
+func TestChatCompletionMessageFilePart(t *testing.T) {
+	msg := openai.ChatCompletionMessage{
+		Role: openai.ChatMessageRoleUser,
+		MultiContent: []openai.ChatMessagePart{
+			{
+				Type: openai.ChatMessagePartTypeFile,
+				File: &openai.ChatMessageFile{
+					FileID:   "file-123",
+					Filename: "notes.txt",
+				},
+			},
+		},
+	}
+	data, err := json.Marshal(msg)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	if !strings.Contains(string(data), "file-123") {
+		t.Fatalf("expected file id in output: %s", string(data))
+	}
+	var decoded openai.ChatCompletionMessage
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if len(decoded.MultiContent) != 1 || decoded.MultiContent[0].File == nil {
+		t.Fatalf("file part not round-tripped: %#v", decoded.MultiContent)
+	}
+	if decoded.MultiContent[0].File.FileID != "file-123" {
+		t.Fatalf("unexpected file_id: %#v", decoded.MultiContent[0].File)
+	}
+}
+
+func TestChatCompletionRequestAudioFields(t *testing.T) {
+	req := openai.ChatCompletionRequest{
+		Model:      openai.GPT4oMini,
+		Modalities: []string{"text", "audio"},
+		Audio: &openai.ChatCompletionAudioConfig{
+			Voice:  "alloy",
+			Format: "wav",
+		},
+		Messages: []openai.ChatCompletionMessage{{
+			Role:    openai.ChatMessageRoleUser,
+			Content: "hi",
+		}},
+	}
+	data, err := json.Marshal(req)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	body := string(data)
+	if !strings.Contains(body, `"modalities"`) || !strings.Contains(body, `"audio"`) {
+		t.Fatalf("expected audio fields in request JSON: %s", body)
+	}
+}
+
+func TestChatCompletionRequestUserFileContentRoundTrip(t *testing.T) {
+	raw := []byte(`{
+		"model":"gpt-4o",
+		"messages":[
+			{
+				"role":"user",
+				"content":[
+					{
+						"type":"file",
+						"file":{"file_id":"file-xyz","filename":"report.pdf"}
+					}
+				]
+			}
+		]
+	}`)
+	var req openai.ChatCompletionRequest
+	if err := json.Unmarshal(raw, &req); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if len(req.Messages) != 1 || len(req.Messages[0].MultiContent) != 1 {
+		t.Fatalf("unexpected multi content: %#v", req.Messages)
+	}
+	part := req.Messages[0].MultiContent[0]
+	if part.Type != openai.ChatMessagePartTypeFile || part.File == nil {
+		t.Fatalf("file part missing: %#v", part)
+	}
+	if part.File.FileID != "file-xyz" || part.File.Filename != "report.pdf" {
+		t.Fatalf("file metadata mismatch: %#v", part.File)
+	}
+	serialized, err := json.Marshal(req)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	var roundTrip openai.ChatCompletionRequest
+	if err := json.Unmarshal(serialized, &roundTrip); err != nil {
+		t.Fatalf("round-trip unmarshal failed: %v", err)
+	}
+	if len(roundTrip.Messages) != 1 || len(roundTrip.Messages[0].MultiContent) != 1 {
+		t.Fatalf("round-trip multi content mismatch: %#v", roundTrip.Messages)
+	}
+	finalPart := roundTrip.Messages[0].MultiContent[0]
+	if finalPart.Type != openai.ChatMessagePartTypeFile || finalPart.File == nil {
+		t.Fatalf("round-trip file part missing: %#v", finalPart)
+	}
+	if finalPart.File.FileID != "file-xyz" || finalPart.File.Filename != "report.pdf" {
+		t.Fatalf("round-trip file metadata mismatch: %#v", finalPart.File)
+	}
+	if !bytes.Contains(serialized, []byte("file-xyz")) {
+		t.Fatalf("expected serialized JSON to contain file id: %s", string(serialized))
+	}
+}
+
+func TestChatCompletionRequestUserAudioContentRoundTrip(t *testing.T) {
+	raw := []byte(`{
+		"model":"gpt-4o",
+		"messages":[
+			{
+				"role":"user",
+				"content":[
+					{
+						"type":"input_audio",
+						"input_audio":{"data":"AQID","format":"wav"}
+					}
+				]
+			}
+		]
+	}`)
+	var req openai.ChatCompletionRequest
+	if err := json.Unmarshal(raw, &req); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if len(req.Messages) != 1 || len(req.Messages[0].MultiContent) != 1 {
+		t.Fatalf("unexpected multi content: %#v", req.Messages)
+	}
+	part := req.Messages[0].MultiContent[0]
+	if part.Type != openai.ChatMessagePartTypeInputAudio || part.InputAudio == nil {
+		t.Fatalf("audio part missing: %#v", part)
+	}
+	if part.InputAudio.Data != "AQID" || part.InputAudio.Format != "wav" {
+		t.Fatalf("audio payload mismatch: %#v", part.InputAudio)
+	}
+	serialized, err := json.Marshal(req)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	var roundTrip openai.ChatCompletionRequest
+	if err := json.Unmarshal(serialized, &roundTrip); err != nil {
+		t.Fatalf("round-trip unmarshal failed: %v", err)
+	}
+	if len(roundTrip.Messages) != 1 || len(roundTrip.Messages[0].MultiContent) != 1 {
+		t.Fatalf("round-trip multi content mismatch: %#v", roundTrip.Messages)
+	}
+	finalPart := roundTrip.Messages[0].MultiContent[0]
+	if finalPart.Type != openai.ChatMessagePartTypeInputAudio || finalPart.InputAudio == nil {
+		t.Fatalf("round-trip audio part missing: %#v", finalPart)
+	}
+	if finalPart.InputAudio.Data != "AQID" || finalPart.InputAudio.Format != "wav" {
+		t.Fatalf("round-trip audio payload mismatch: %#v", finalPart.InputAudio)
+	}
+	if !bytes.Contains(serialized, []byte("AQID")) {
+		t.Fatalf("expected serialized JSON to contain audio data: %s", string(serialized))
 	}
 }
