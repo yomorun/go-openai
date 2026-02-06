@@ -1483,3 +1483,55 @@ func TestChatCompletionRequestUserFileContentRoundTrip(t *testing.T) {
 		t.Fatalf("expected serialized JSON to contain file id: %s", string(serialized))
 	}
 }
+
+func TestChatCompletionRequestUserAudioContentRoundTrip(t *testing.T) {
+	raw := []byte(`{
+		"model":"gpt-4o",
+		"messages":[
+			{
+				"role":"user",
+				"content":[
+					{
+						"type":"input_audio",
+						"input_audio":{"data":"AQID","format":"wav"}
+					}
+				]
+			}
+		]
+	}`)
+	var req openai.ChatCompletionRequest
+	if err := json.Unmarshal(raw, &req); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if len(req.Messages) != 1 || len(req.Messages[0].MultiContent) != 1 {
+		t.Fatalf("unexpected multi content: %#v", req.Messages)
+	}
+	part := req.Messages[0].MultiContent[0]
+	if part.Type != openai.ChatMessagePartTypeInputAudio || part.InputAudio == nil {
+		t.Fatalf("audio part missing: %#v", part)
+	}
+	if part.InputAudio.Data != "AQID" || part.InputAudio.Format != "wav" {
+		t.Fatalf("audio payload mismatch: %#v", part.InputAudio)
+	}
+	serialized, err := json.Marshal(req)
+	if err != nil {
+		t.Fatalf("marshal failed: %v", err)
+	}
+	var roundTrip openai.ChatCompletionRequest
+	if err := json.Unmarshal(serialized, &roundTrip); err != nil {
+		t.Fatalf("round-trip unmarshal failed: %v", err)
+	}
+	if len(roundTrip.Messages) != 1 || len(roundTrip.Messages[0].MultiContent) != 1 {
+		t.Fatalf("round-trip multi content mismatch: %#v", roundTrip.Messages)
+	}
+	finalPart := roundTrip.Messages[0].MultiContent[0]
+	if finalPart.Type != openai.ChatMessagePartTypeInputAudio || finalPart.InputAudio == nil {
+		t.Fatalf("round-trip audio part missing: %#v", finalPart)
+	}
+	if finalPart.InputAudio.Data != "AQID" || finalPart.InputAudio.Format != "wav" {
+		t.Fatalf("round-trip audio payload mismatch: %#v", finalPart.InputAudio)
+	}
+	if !bytes.Contains(serialized, []byte("AQID")) {
+		t.Fatalf("expected serialized JSON to contain audio data: %s", string(serialized))
+	}
+}
