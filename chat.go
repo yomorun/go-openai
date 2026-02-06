@@ -92,14 +92,24 @@ type ChatMessageImageURL struct {
 type ChatMessagePartType string
 
 const (
-	ChatMessagePartTypeText     ChatMessagePartType = "text"
-	ChatMessagePartTypeImageURL ChatMessagePartType = "image_url"
+	ChatMessagePartTypeText       ChatMessagePartType = "text"
+	ChatMessagePartTypeImageURL   ChatMessagePartType = "image_url"
+	ChatMessagePartTypeInputAudio ChatMessagePartType = "input_audio"
+	ChatMessagePartTypeFile       ChatMessagePartType = "file"
 )
 
+type ChatMessageInputAudio struct {
+	Data       string `json:"data"`
+	Format     string `json:"format,omitempty"`
+	Transcript string `json:"transcript,omitempty"`
+}
+
 type ChatMessagePart struct {
-	Type     ChatMessagePartType  `json:"type,omitempty"`
-	Text     string               `json:"text,omitempty"`
-	ImageURL *ChatMessageImageURL `json:"image_url,omitempty"`
+	Type       ChatMessagePartType    `json:"type,omitempty"`
+	Text       string                 `json:"text,omitempty"`
+	ImageURL   *ChatMessageImageURL   `json:"image_url,omitempty"`
+	InputAudio *ChatMessageInputAudio `json:"input_audio,omitempty"`
+	File       *ChatMessageFile       `json:"file,omitempty"`
 	// ExtraPart is a vendor-specific extension container. For example, Vertex AI's
 	// OpenAI-compatible endpoint returns thought signatures inside
 	// content parts under extra_part.google.thought_signature.
@@ -109,11 +119,27 @@ type ChatMessagePart struct {
 	ExtraContent map[string]any `json:"extra_content,omitempty"`
 }
 
+type ChatMessageAudio struct {
+	ID         string         `json:"id,omitempty"`
+	Data       string         `json:"data,omitempty"`
+	Format     string         `json:"format,omitempty"`
+	ExpiresAt  int64          `json:"expires_at,omitempty"`
+	Transcript string         `json:"transcript,omitempty"`
+	ExtraData  map[string]any `json:"extra_data,omitempty"`
+}
+
+type ChatMessageFile struct {
+	FileID   string `json:"file_id,omitempty"`
+	FileData string `json:"file_data,omitempty"`
+	Filename string `json:"filename,omitempty"`
+}
+
 type ChatCompletionMessage struct {
 	Role         string `json:"role"`
 	Content      string `json:"content,omitempty"`
 	Refusal      string `json:"refusal,omitempty"`
 	MultiContent []ChatMessagePart
+	Audio        *ChatMessageAudio `json:"audio,omitempty"`
 	// ExtraContent is a vendor-specific extension container. For example, Vertex AI
 	// uses extra_content to return additional metadata alongside content arrays.
 	ExtraContent map[string]any `json:"extra_content,omitempty"`
@@ -153,6 +179,7 @@ func (m ChatCompletionMessage) MarshalJSON() ([]byte, error) {
 			FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
 			ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 			ToolCallID       string            `json:"tool_call_id,omitempty"`
+			Audio            *ChatMessageAudio `json:"audio,omitempty"`
 			ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 		}{
 			Role:             m.Role,
@@ -163,6 +190,7 @@ func (m ChatCompletionMessage) MarshalJSON() ([]byte, error) {
 			FunctionCall:     m.FunctionCall,
 			ToolCalls:        m.ToolCalls,
 			ToolCallID:       m.ToolCallID,
+			Audio:            m.Audio,
 			ExtraContent:     m.ExtraContent,
 		}
 		return json.Marshal(msg)
@@ -178,6 +206,7 @@ func (m ChatCompletionMessage) MarshalJSON() ([]byte, error) {
 		FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
 		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 		ToolCallID       string            `json:"tool_call_id,omitempty"`
+		Audio            *ChatMessageAudio `json:"audio,omitempty"`
 		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 	}{
 		Role:             m.Role,
@@ -188,6 +217,7 @@ func (m ChatCompletionMessage) MarshalJSON() ([]byte, error) {
 		FunctionCall:     m.FunctionCall,
 		ToolCalls:        m.ToolCalls,
 		ToolCallID:       m.ToolCallID,
+		Audio:            m.Audio,
 		ExtraContent:     m.ExtraContent,
 	}
 	return json.Marshal(msg)
@@ -199,12 +229,13 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		Content          string `json:"content"`
 		Refusal          string `json:"refusal,omitempty"`
 		MultiContent     []ChatMessagePart
-		Name             string         `json:"name,omitempty"`
-		ReasoningContent string         `json:"reasoning_content,omitempty"`
-		FunctionCall     *FunctionCall  `json:"function_call,omitempty"`
-		ToolCalls        []ToolCall     `json:"tool_calls,omitempty"`
-		ToolCallID       string         `json:"tool_call_id,omitempty"`
-		ExtraContent     map[string]any `json:"extra_content,omitempty"`
+		Name             string            `json:"name,omitempty"`
+		ReasoningContent string            `json:"reasoning_content,omitempty"`
+		FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
+		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
+		ToolCallID       string            `json:"tool_call_id,omitempty"`
+		Audio            *ChatMessageAudio `json:"audio,omitempty"`
+		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 	}{}
 
 	if err := json.Unmarshal(bs, &msg); err == nil {
@@ -220,6 +251,7 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		m.FunctionCall = msg.FunctionCall
 		m.ToolCalls = msg.ToolCalls
 		m.ToolCallID = msg.ToolCallID
+		m.Audio = msg.Audio
 		m.ExtraContent = msg.ExtraContent
 		return nil
 	}
@@ -233,6 +265,7 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
 		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 		ToolCallID       string            `json:"tool_call_id,omitempty"`
+		Audio            *ChatMessageAudio `json:"audio,omitempty"`
 		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 	}{}
 	if err := json.Unmarshal(bs, &multiMsg); err != nil {
@@ -250,6 +283,7 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 	m.FunctionCall = multiMsg.FunctionCall
 	m.ToolCalls = multiMsg.ToolCalls
 	m.ToolCallID = multiMsg.ToolCallID
+	m.Audio = multiMsg.Audio
 	m.ExtraContent = multiMsg.ExtraContent
 	return nil
 }
@@ -293,6 +327,14 @@ const (
 type ChatCompletionResponseFormat struct {
 	Type       ChatCompletionResponseFormatType        `json:"type,omitempty"`
 	JSONSchema *ChatCompletionResponseFormatJSONSchema `json:"json_schema,omitempty"`
+}
+
+type ChatCompletionAudioConfig struct {
+	Voice      string         `json:"voice,omitempty"`
+	Format     string         `json:"format,omitempty"`
+	SampleRate int            `json:"sample_rate,omitempty"`
+	Channels   int            `json:"channels,omitempty"`
+	Extra      map[string]any `json:"extra,omitempty"`
 }
 
 type ChatCompletionResponseFormatJSONSchema struct {
@@ -340,8 +382,9 @@ type ChatCompletionRequestExtensions struct {
 
 // ChatCompletionRequest represents a request structure for chat completion API.
 type ChatCompletionRequest struct {
-	Model    string                  `json:"model"`
-	Messages []ChatCompletionMessage `json:"messages"`
+	Model      string                  `json:"model"`
+	Messages   []ChatCompletionMessage `json:"messages"`
+	Modalities []string                `json:"modalities,omitempty"`
 	// MaxTokens The maximum number of tokens that can be generated in the chat completion.
 	// This value can be used to control costs for text generated via API.
 	// Deprecated: use MaxCompletionTokens. Not compatible with o1-series models.
@@ -396,7 +439,8 @@ type ChatCompletionRequest struct {
 	// Additional kwargs to pass to the template renderer. Will be accessible by the chat template.
 	// Such as think mode for qwen3. "chat_template_kwargs": {"enable_thinking": false}
 	// https://qwen.readthedocs.io/en/latest/deployment/vllm.html#thinking-non-thinking-modes
-	ChatTemplateKwargs map[string]any `json:"chat_template_kwargs,omitempty"`
+	ChatTemplateKwargs map[string]any             `json:"chat_template_kwargs,omitempty"`
+	Audio              *ChatCompletionAudioConfig `json:"audio,omitempty"`
 	// Specifies the latency tier to use for processing the request.
 	ServiceTier ServiceTier `json:"service_tier,omitempty"`
 	// Verbosity determines how many output tokens are generated. Lowering the number of
