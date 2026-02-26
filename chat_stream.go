@@ -19,7 +19,8 @@ type ChatCompletionStreamChoiceDelta struct {
 	// which is not in the official documentation.
 	// the doc from deepseek:
 	// - https://api-docs.deepseek.com/api/create-chat-completion#responses
-	ReasoningContent string `json:"reasoning_content,omitempty"`
+	ReasoningContent string         `json:"reasoning_content,omitempty"`
+	ExtraContent     map[string]any `json:"extra_content,omitempty"`
 }
 
 func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
@@ -32,6 +33,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 		Refusal          string            `json:"refusal,omitempty"`
 		ReasoningContent string            `json:"reasoning_content,omitempty"`
 		Audio            *ChatMessageAudio `json:"audio,omitempty"`
+		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 	}
 
 	var p probe
@@ -48,6 +50,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 			Refusal:          p.Refusal,
 			ReasoningContent: p.ReasoningContent,
 			Audio:            p.Audio,
+			ExtraContent:     p.ExtraContent,
 		}
 		return nil
 	}
@@ -62,6 +65,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 			Refusal          string            `json:"refusal,omitempty"`
 			ReasoningContent string            `json:"reasoning_content,omitempty"`
 			Audio            *ChatMessageAudio `json:"audio,omitempty"`
+			ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 		}
 		if err := json.Unmarshal(bs, &r); err != nil {
 			return err
@@ -74,6 +78,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 			Refusal:          r.Refusal,
 			ReasoningContent: r.ReasoningContent,
 			Audio:            r.Audio,
+			ExtraContent:     r.ExtraContent,
 		}
 		return nil
 	}
@@ -87,6 +92,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 		Refusal          string            `json:"refusal,omitempty"`
 		ReasoningContent string            `json:"reasoning_content,omitempty"`
 		Audio            *ChatMessageAudio `json:"audio,omitempty"`
+		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 	}
 	if err := json.Unmarshal(bs, &a); err != nil {
 		return err
@@ -100,6 +106,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 		Refusal:          a.Refusal,
 		ReasoningContent: a.ReasoningContent,
 		Audio:            a.Audio,
+		ExtraContent:     a.ExtraContent,
 	}
 	return nil
 }

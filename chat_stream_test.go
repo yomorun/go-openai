@@ -1009,6 +1009,58 @@ func TestCreateChatCompletionStreamO4MiniReasoningValidatorFails(t *testing.T) {
 	}
 }
 
+func TestChatCompletionStreamChoiceDeltaExtraContent(t *testing.T) {
+	const chunk = `{
+		"id": "lQmgacyGPPqRjeYPlLmOyAo",
+		"object": "chat.completion.chunk",
+		"created": 1772095893,
+		"model": "google/gemini-3.1-pro-preview",
+		"system_fingerprint": "",
+		"choices": [
+			{
+				"index": 0,
+				"delta": {
+					"role": "assistant",
+					"content": "Thoughtful explanation",
+					"extra_content": {
+						"google": {
+							"thought": true
+						}
+					}
+				},
+				"logprobs": null
+			}
+		]
+	}`
+
+	var resp openai.ChatCompletionStreamResponse
+	err := json.Unmarshal([]byte(chunk), &resp)
+	checks.NoError(t, err, "json.Unmarshal extra_content chunk")
+
+	if len(resp.Choices) != 1 {
+		t.Fatalf("expected exactly one choice, got %d", len(resp.Choices))
+	}
+
+	delta := resp.Choices[0].Delta
+	if delta.Content != "Thoughtful explanation" {
+		t.Fatalf("unexpected content: %q", delta.Content)
+	}
+	if delta.Role != openai.ChatMessageRoleAssistant {
+		t.Fatalf("unexpected role: %q", delta.Role)
+	}
+	if len(delta.ExtraContent) == 0 {
+		t.Fatal("expected extra_content to be populated")
+	}
+	googleData, ok := delta.ExtraContent["google"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected google extra content, got %#v", delta.ExtraContent["google"])
+	}
+	thought, ok := googleData["thought"].(bool)
+	if !ok || !thought {
+		t.Fatalf("expected google.thought to be true, got %#v", googleData["thought"])
+	}
+}
+
 func compareChatStreamResponseChoices(c1, c2 openai.ChatCompletionStreamChoice) bool {
 	if c1.Index != c2.Index {
 		return false
