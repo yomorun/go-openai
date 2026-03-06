@@ -303,7 +303,7 @@ type ToolCall struct {
 	// Index is not nil only in chat completion chunk object
 	Index    *int         `json:"index,omitempty"`
 	ID       string       `json:"id,omitempty"`
-	Type     ToolType     `json:"type"`
+	Type     ToolType     `json:"type,omitempty"`
 	Function FunctionCall `json:"function"`
 	// ExtraContent preserves provider-specific metadata (e.g. thought signatures)
 	// attached to tool calls, as used by Vertex AI.
