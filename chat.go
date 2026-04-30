@@ -459,7 +459,22 @@ type ChatCompletionRequest struct {
 	// ExtraBody lets provider-specific fields pass through. Vertex AI uses
 	// extra_body.google.* for features like thinking_config and safety_settings.
 	ExtraBody map[string]any `json:"extra_body,omitempty"`
+	// Thinking controls the thinking mode of tencent tokenhub deepseek model.
+	// doc: https://cloud.tencent.com/document/product/1823/130079
+	Thinking *Thinking `json:"thinking,omitempty"`
 }
+
+type Thinking struct {
+	Type string `json:"type,omitempty"`
+}
+
+type ThinkingType string
+
+const (
+	ThinkingTypeDisabled ThinkingType = "disabled"
+	ThinkingTypeEnabled  ThinkingType = "enabled"
+	ThinkingTypeAuto     ThinkingType = "auto"
+)
 
 type StreamOptions struct {
 	// If set, an additional chunk will be streamed before the data: [DONE] message.
