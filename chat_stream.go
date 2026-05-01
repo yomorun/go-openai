@@ -32,6 +32,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 		Refusal          string            `json:"refusal,omitempty"`
 		ReasoningContent string            `json:"reasoning_content,omitempty"`
+		Reasoning        string            `json:"reasoning,omitempty"`
 		Audio            *ChatMessageAudio `json:"audio,omitempty"`
 		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 	}
@@ -43,12 +44,16 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 
 	// No content — simply copy scalar fields.
 	if len(p.Content) == 0 {
+		reasoningContent := p.ReasoningContent
+		if reasoningContent == "" && p.Reasoning != "" {
+			reasoningContent = p.Reasoning
+		}
 		*d = ChatCompletionStreamChoiceDelta{
 			Role:             p.Role,
 			FunctionCall:     p.FunctionCall,
 			ToolCalls:        p.ToolCalls,
 			Refusal:          p.Refusal,
-			ReasoningContent: p.ReasoningContent,
+			ReasoningContent: reasoningContent,
 			Audio:            p.Audio,
 			ExtraContent:     p.ExtraContent,
 		}
@@ -62,13 +67,18 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 			Role             string            `json:"role,omitempty"`
 			FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
 			ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
-			Refusal          string            `json:"refusal,omitempty"`
-			ReasoningContent string            `json:"reasoning_content,omitempty"`
-			Audio            *ChatMessageAudio `json:"audio,omitempty"`
-			ExtraContent     map[string]any    `json:"extra_content,omitempty"`
+		Refusal          string            `json:"refusal,omitempty"`
+		ReasoningContent string            `json:"reasoning_content,omitempty"`
+		Reasoning        string            `json:"reasoning,omitempty"`
+		Audio            *ChatMessageAudio `json:"audio,omitempty"`
+		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 		}
 		if err := json.Unmarshal(bs, &r); err != nil {
 			return err
+		}
+		reasoningContent := r.ReasoningContent
+		if reasoningContent == "" && r.Reasoning != "" {
+			reasoningContent = r.Reasoning
 		}
 		*d = ChatCompletionStreamChoiceDelta{
 			Content:          r.Content,
@@ -76,7 +86,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 			FunctionCall:     r.FunctionCall,
 			ToolCalls:        r.ToolCalls,
 			Refusal:          r.Refusal,
-			ReasoningContent: r.ReasoningContent,
+			ReasoningContent: reasoningContent,
 			Audio:            r.Audio,
 			ExtraContent:     r.ExtraContent,
 		}
@@ -91,11 +101,16 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 		Refusal          string            `json:"refusal,omitempty"`
 		ReasoningContent string            `json:"reasoning_content,omitempty"`
+		Reasoning        string            `json:"reasoning,omitempty"`
 		Audio            *ChatMessageAudio `json:"audio,omitempty"`
 		ExtraContent     map[string]any    `json:"extra_content,omitempty"`
 	}
 	if err := json.Unmarshal(bs, &a); err != nil {
 		return err
+	}
+	reasoningContent := a.ReasoningContent
+	if reasoningContent == "" && a.Reasoning != "" {
+		reasoningContent = a.Reasoning
 	}
 	*d = ChatCompletionStreamChoiceDelta{
 		Content:          concatTextParts(a.MultiContent),
@@ -104,7 +119,7 @@ func (d *ChatCompletionStreamChoiceDelta) UnmarshalJSON(bs []byte) error {
 		FunctionCall:     a.FunctionCall,
 		ToolCalls:        a.ToolCalls,
 		Refusal:          a.Refusal,
-		ReasoningContent: a.ReasoningContent,
+		ReasoningContent: reasoningContent,
 		Audio:            a.Audio,
 		ExtraContent:     a.ExtraContent,
 	}

@@ -1290,6 +1290,37 @@ func TestChatCompletionStreamChoiceDeltaAudio(t *testing.T) {
 	}
 }
 
+func TestChatCompletionStreamChoiceDeltaReasoningFallback(t *testing.T) {
+	tests := []struct {
+		name             string
+		raw              string
+		reasoningContent string
+	}{
+		{
+			name:             "reasoning_content wins",
+			raw:              `{"reasoning_content":"rc","reasoning":"r"}`,
+			reasoningContent: "rc",
+		},
+		{
+			name:             "reasoning fallback",
+			raw:              `{"reasoning":"r"}`,
+			reasoningContent: "r",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var d openai.ChatCompletionStreamChoiceDelta
+			if err := json.Unmarshal([]byte(tt.raw), &d); err != nil {
+				t.Fatalf("unmarshal failed: %v", err)
+			}
+			if d.ReasoningContent != tt.reasoningContent {
+				t.Fatalf("expected reasoning content %q, got %q", tt.reasoningContent, d.ReasoningContent)
+			}
+		})
+	}
+}
+
 func TestChatCompletionMessageFlattenContent(t *testing.T) {
 	raw := []byte(`{
 		"role":"assistant",
@@ -1307,6 +1338,37 @@ func TestChatCompletionMessageFlattenContent(t *testing.T) {
 	}
 	if len(msg.MultiContent) != 2 {
 		t.Fatalf("expected 2 parts")
+	}
+}
+
+func TestChatCompletionMessageReasoningFallback(t *testing.T) {
+	tests := []struct {
+		name             string
+		raw              string
+		reasoningContent string
+	}{
+		{
+			name:             "reasoning_content wins",
+			raw:              `{"role":"assistant","reasoning_content":"rc","reasoning":"r"}`,
+			reasoningContent: "rc",
+		},
+		{
+			name:             "reasoning fallback",
+			raw:              `{"role":"assistant","reasoning":"r"}`,
+			reasoningContent: "r",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var msg openai.ChatCompletionMessage
+			if err := json.Unmarshal([]byte(tt.raw), &msg); err != nil {
+				t.Fatalf("unmarshal failed: %v", err)
+			}
+			if msg.ReasoningContent != tt.reasoningContent {
+				t.Fatalf("expected reasoning content %q, got %q", tt.reasoningContent, msg.ReasoningContent)
+			}
+		})
 	}
 }
 

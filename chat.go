@@ -231,6 +231,7 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		MultiContent     []ChatMessagePart
 		Name             string            `json:"name,omitempty"`
 		ReasoningContent string            `json:"reasoning_content,omitempty"`
+		Reasoning        string            `json:"reasoning,omitempty"`
 		FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
 		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 		ToolCallID       string            `json:"tool_call_id,omitempty"`
@@ -248,6 +249,9 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		}
 		m.Name = msg.Name
 		m.ReasoningContent = msg.ReasoningContent
+		if m.ReasoningContent == "" && msg.Reasoning != "" {
+			m.ReasoningContent = msg.Reasoning
+		}
 		m.FunctionCall = msg.FunctionCall
 		m.ToolCalls = msg.ToolCalls
 		m.ToolCallID = msg.ToolCallID
@@ -262,6 +266,7 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		MultiContent     []ChatMessagePart `json:"content"`
 		Name             string            `json:"name,omitempty"`
 		ReasoningContent string            `json:"reasoning_content,omitempty"`
+		Reasoning        string            `json:"reasoning,omitempty"`
 		FunctionCall     *FunctionCall     `json:"function_call,omitempty"`
 		ToolCalls        []ToolCall        `json:"tool_calls,omitempty"`
 		ToolCallID       string            `json:"tool_call_id,omitempty"`
@@ -280,6 +285,9 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 	}
 	m.Name = multiMsg.Name
 	m.ReasoningContent = multiMsg.ReasoningContent
+	if m.ReasoningContent == "" && multiMsg.Reasoning != "" {
+		m.ReasoningContent = multiMsg.Reasoning
+	}
 	m.FunctionCall = multiMsg.FunctionCall
 	m.ToolCalls = multiMsg.ToolCalls
 	m.ToolCallID = multiMsg.ToolCallID
