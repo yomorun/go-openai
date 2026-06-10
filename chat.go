@@ -244,9 +244,6 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 		m.Content = msg.Content
 		m.Refusal = msg.Refusal
 		m.MultiContent = msg.MultiContent
-		if m.Content == "" && len(m.MultiContent) > 0 && m.Role != ChatMessageRoleUser {
-			m.Content = concatTextParts(m.MultiContent)
-		}
 		m.Name = msg.Name
 		m.ReasoningContent = msg.ReasoningContent
 		if m.ReasoningContent == "" && msg.Reasoning != "" {
@@ -280,9 +277,6 @@ func (m *ChatCompletionMessage) UnmarshalJSON(bs []byte) error {
 	m.Content = multiMsg.Content
 	m.Refusal = multiMsg.Refusal
 	m.MultiContent = multiMsg.MultiContent
-	if m.Content == "" && len(m.MultiContent) > 0 && m.Role != ChatMessageRoleUser {
-		m.Content = concatTextParts(m.MultiContent)
-	}
 	m.Name = multiMsg.Name
 	m.ReasoningContent = multiMsg.ReasoningContent
 	if m.ReasoningContent == "" && multiMsg.Reasoning != "" {
